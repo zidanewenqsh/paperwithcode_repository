@@ -1,4 +1,9 @@
 git/
+output/*
+data/*
+# *.txt
+graph/*
+*.pdf
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

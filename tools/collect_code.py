@@ -49,9 +49,10 @@ def collect_and_write_files(paths, extensions, output_path):
                 print(f"Error decoding file {file_path}")
 
 # 使用示例
-paths = [r"D:\MyProjects\paperwithcode_repository\transformer\transformer-pytorch"]
+# paths = [r"D:\Projects\smplx"]
+paths = [r"D:\Projects\smplify-x"]
 extensions = ['.py', '.ipynb', '.md']
 # output_path = 'smplx_code.txt'
-output_path = r'D:\MyProjects\paperwithcode_repository\transformer\saves\transformer-pytorch.txt'
+output_path = r'.\saves\smplify-x.txt'
 Path(output_path).parent.mkdir(parents=True, exist_ok=True)
 collect_and_write_files(paths, extensions, output_path)
