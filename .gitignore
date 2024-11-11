@@ -1,5 +1,8 @@
 git/
+methods/*
+DCNN/*
 output/*
+adults_female/*
 data/*
 # *.txt
 graph/*

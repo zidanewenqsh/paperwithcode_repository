@@ -20,6 +20,16 @@ import json
 import logging
 import pymysql
 
+def format_string(s):
+    # 将所有字符转换为小写
+    s = s.lower()
+    # 替换括号为 ' '
+    s = s.replace('(', ' ').replace(')', ' ')
+    # 替换多个空格为单个空格
+    s = ' '.join(s.split())
+    # 替换空格为 '-'
+    s = s.replace(' ', '-')
+    return s
 
 logging.basicConfig(
     level=logging.INFO,  # 设置日志级别，可以是DEBUG、INFO、WARNING、ERROR、CRITICAL
@@ -94,6 +104,7 @@ class Spider(Log):
             'User-Agent': user_agent,
         }
         print("re init finished")
+
     def resp_image(self, imgurl):
 
         response = requests.get(imgurl, headers=self.headers, proxies=self.proxy)
@@ -148,16 +159,17 @@ def readhtml(htmlfile):
 def getdata(data):
     return data
 
-def treatbase(data, *args, **kwargs):
+def treat(data, *args, **kwargs):
     # 解析 HTML
     tree = etree.HTML(data)
 
     
-    if len(args) < 2:
-        print("args length < 2")
-        return
+    # if len(args) < 2:
+    #     print("args length < 2")
+    #     return
     
-    xpath, pattern = args
+    xpath = args[0]
+
     assert (isinstance(xpath, str) or isinstance(xpath, list))
     if isinstance(xpath, str):
         hrefs = tree.xpath(xpath)
@@ -167,98 +179,23 @@ def treatbase(data, *args, **kwargs):
         hrefs = [list(x) for x in zip(*hrefs)]
     if hrefs is None:
         hrefs = {}
-    # print(hrefs)
-    # exit()
-    # hrefs = [
-    #     (element[2], 'https://paperswithcode.com' + element[0], re.search(pattern, element[1]).group(1))
-    #     for element in hrefs
-    #     if re.search(pattern, element[1])
-    # ]
-    hrefs = {
-        element[2]:('https://paperswithcode.com' + element[0], re.search(pattern, element[1]).group(1))
-        for element in hrefs
-        if re.search(pattern, element[1])
-    }
-    # if pattern is not None or pattern != "":
-    #     hrefs = [pattern + item for item in hrefs]
-    # print(hrefs)
-    # print(type(hrefs))
-    # exit()
+    return hrefs
+
+def treatbase(data, *args, **kwargs):
+    hrefs = treat(data, *args, **kwargs)
+    hrefs = [item.strip() for item in hrefs]
     return hrefs
 
 def treatsubdata(data, *args, **kwargs):
-    # 解析 HTML
-    tree = etree.HTML(data)
-
-    
-    if len(args) < 2:
-        print("args length < 2")
-        return
-    
-    xpath, pattern = args
-    assert (isinstance(xpath, str) or isinstance(xpath, list))
-    if isinstance(xpath, str):
-        hrefs = tree.xpath(xpath)
-    else:
-        hrefs = [tree.xpath(x) for x in xpath]
-        # print(hrefs)
-        # hrefs = [list(x) for x in zip(*hrefs)]
-    if hrefs is None:
-        hrefs = []
-    # hrefs = [[item.strip() for item in hrefs[0] if item.strip()], hrefs[1], hrefs[2]]
-    hrefs = [hrefs[0][0].strip(), hrefs[1][0], hrefs[2]]
+    hrefs = treat(data, *args, **kwargs)
+    # print(type(hrefs))
+    hrefs = ["https://paperswithcode.com" + item for item in hrefs]
     return hrefs
 
-def treatsubdata_code(data, *args, **kwargs):
-    # 解析 HTML
-    tree = etree.HTML(data)
-
-    
-    if len(args) < 2:
-        print("args length < 2")
-        return
-    
-    xpath, pattern = args
-    assert (isinstance(xpath, str) or isinstance(xpath, list))
-    if isinstance(xpath, str):
-        hrefs = tree.xpath(xpath)
-    else:
-        hrefs = [tree.xpath(x) for x in xpath]
-        # print(hrefs)
-        hrefs = [list(x) for x in zip(*hrefs)]
-    if hrefs is None:
-        hrefs = []
-    # hrefs = [item.strip() for item in hrefs if item.strip()]
-    return hrefs
-
-def treatsubdata_dataset(data, *args, **kwargs):
-    # 解析 HTML
-    tree = etree.HTML(data)
-
-    
-    if len(args) < 2:
-        print("args length < 2")
-        return
-    
-    xpath, pattern = args
-    assert (isinstance(xpath, str) or isinstance(xpath, list))
-    if isinstance(xpath, str):
-        hrefs = tree.xpath(xpath)
-    else:
-        hrefs = [tree.xpath(x) for x in xpath]
-        # print(hrefs)
-        # exit()
-        # hrefs = [list(x) for x in zip(*hrefs)]
-    if hrefs is None:
-        hrefs = []
-    hrefs = [
-        [item.strip() for item in hrefs[2] if item.strip()], ['https://paperswithcode.com' + x for x in hrefs[0]], hrefs[1],
-    ]
-
-    if len(hrefs[0]) == len(hrefs[1]) == len(hrefs[2]):
-        hrefs = [list(x) for x in zip(*hrefs)]
-    else:
-        return []
+def treatsubdata2(data, *args, **kwargs):
+    hrefs = treat(data, *args, **kwargs)
+    # print(type(hrefs))
+    hrefs = [[item[0], "https://paperswithcode.com" + item[1], item[2]] for item in hrefs]
     return hrefs
 
 def treatimg(data, *args, **kwargs):
@@ -296,31 +233,33 @@ def custom_print(*messages, file_path=None, mode='a'):
 
 
 if __name__ == "__main__":
-    resultpath = Path("./output/result3.txt")
+    resultpath = Path("./output/medical.md")
     # Ensure the directory exists
     resultpath.parent.mkdir(parents=True, exist_ok=True)
     # custom_print_partial = partial(custom_print)
     custom_print_partial = partial(custom_print, file_path=resultpath, mode='a')
 
     with resultpath.open('w', encoding='utf-8') as new_file:
-        new_file.write("This is a new file created by the script.\n")
+        pass
 
     
     spider = Spider(logfile="spider.log", basesavedir="./images")
-    hrefxpath = "/html/body/div[3]/div[2]/div/div[2]/div/div[1]/h1/a/@href"
-    imgxpath = "/html/body/div[3]/div[2]/div/div[1]/a/div/@style"
-    titlexpath = "/html/body/div[3]/div[2]/div/div[2]/div/div[1]/h1/a/text()"
-    pattern = r"url\(['\"]?(.*?)['\"]?\)"
+    # hrefxpath = "/html/body/div[3]/div[2]/div/div[2]/div/div[1]/h1/a/@href"
+    # imgxpath = "/html/body/div[3]/div[2]/div/div[1]/a/div/@style"
+    titlexpath = "/html/body/div[3]/div/div[2]/div/div/h2/text()"
+    # "/html/body/div[3]/div/div[2]/div[4]/div/h2"
+    # pattern = r"url\(['\"]?(.*?)['\"]?\)"
     # 调用 Spider 类的方法
     # spider.loadlog()  # 加载日志
     resultsdict = {}
     lastkeys = set()
+    data = ""
     if 0:
         for i in range(1, 100):
             print(f"{i=}")
             target_url = f"https://paperswithcode.com/search?q_meta=&q_type=&q=smpl&page={i}"  # 替换为目标网站的URL
             # 获取目标页面并处理
-            result = spider.resp(target_url, None, treatbase, [hrefxpath, imgxpath, titlexpath], pattern)
+            result = spider.resp(target_url, None, treatbase, titlexpath)
             if len(result) == 0:
                 break
             # print(set(result.keys()))
@@ -333,55 +272,103 @@ if __name__ == "__main__":
 
         print(len(resultsdict))
     else:
-        data = readhtml("smpl.html")
-        resultsdict = spider.resp(None, data, treatbase, [hrefxpath, imgxpath, titlexpath], pattern)
-        print(resultsdict)
-    exit()
-     
+        titlexpath = "/html/body/div[3]/div/div[2]/div/div/h2/text()"
+        data = readhtml("medical.html")
+        results = spider.resp(None, data, treatbase, titlexpath)
+        # print(results)
+        resultsdict = {key:[] for key in results}
+        # print(len(resultsdict))
+    # exit()
     for j, title in enumerate(resultsdict.keys()):
-        print(f"{j=}")
-        url, imgurl = resultsdict[title]
-        
-        custom_print_partial(f"## **{title}**\n", f"- [**URL**]({url})\n", f"![**Image**]({imgurl})\n")
+        # if (j < 91): 
+        #     continue
+        url = f"https://paperswithcode.com/area/medical/{format_string(title)}"
+        # custom_print_partial(f"{j=}, {title=}, {url=}")
+        print(f"{j=}, {title=}, {url=}")
+        # subxpath = "/html/body/div[3]/div[2]/div/div/a/@href"
+        # subxpath = "/html/body/div[3]/div[2]/div/div/a/@href"
+        # "//h2[normalize-space(text())='Semantic Segmentation']"
+        k = 1
+        subdata = []
+        while len(subdata) == 0 and k < 5:
+            subxpath = f"//h2[normalize-space(text())='{title}']/ancestor::div[2]/following-sibling::div[@class='sota-all-tasks'][{k}]/a/@href"
+            # subdata = spider.resp(url, None, treatsubdata, subxpath)
+            subdata = spider.resp(None, data, treatsubdata, subxpath)
+            k += 1
+        # print(len(subdata))
+        if len(subdata) == 0:
+            subdata.append(url)
+        suburl = subdata[0]
+        # print(subdata)
+        custom_print_partial(f"### {title}")
+        custom_print_partial(f"- [{title}]({suburl})")
+        subxpath2 = "/html/body/div[3]/div[2]/div/div/a/@href"
+        titlexpath2 = "/html/body/div[3]/div[2]/div/div/a/div/h1/text()"
+        imgxpath1 = "/html/body/div[3]/div[2]/div/div/a/img/@src"
+        # imgtitlexpath1 = "//div[@id='datasets']//a[contains(@href, 'dataset')]/text()"
 
-        codexpath1 = "//div[@id='implementations-short-list']/div/div[1]/div[1]/a/@href"
-        abstractxpath1 = "/html/body/div[3]/main/div[2]/div/div/p/text()"
-        pdfxpath1 = "/html/body/div[3]/main/div[2]/div/div/a[2]/@href"
-
-        data1 = spider.resp(url, None, getdata)
-        
-        ret = spider.resp(None, data1, treatsubdata, [abstractxpath1, pdfxpath1, codexpath1], "")
-        
-        try:
-            abstract, pdf, code = ret
+        subdata2 = spider.resp(suburl, None, treatsubdata2, [titlexpath2, subxpath2, imgxpath1])
+        # print(subdata2)
+        if subdata2 is None:
+            logger.error(f"{subdata2=}")
+            continue
+        try:    
+            for x in subdata2:
+                # custom_print_partial(f"\t- [{x[0]}]({x[1]})")
+                custom_print_partial(f"\t- [{x[0]}]({x[1]})", f"![{x[0]}]({x[2]})")
         except Exception as e:
             logger.error(f"{e=}")
-            logger.error(f"{ret=}")
+            logger.error(f"{subdata2=}")
+            logger.error(f"{suburl=}")
             exit()
 
-        abstract = abstract.replace("\n", "").replace("\r", "").strip()
-        custom_print_partial(f"- Abstract: {abstract}\n", f"- PDF: {pdf}\n")
+        # if j > 5:
+        #     break
+        # exit()
         
-        if len(code) > 0:
-            # custom_print_partial(f"Code: {code}")
-            custom_print_partial(f"- Code")
-            for x in code:
-                custom_print_partial(f"\t- [{x.split('/')[-1]}]({x})")
-        else:
-            print("code is empty")
+        # url, imgurl = resultsdict[title]
+
+        
+        # custom_print_partial(f"## **{title}**\n", f"- [**URL**]({url})\n", f"![**Image**]({imgurl})\n")
+
+        # codexpath1 = "//div[@id='implementations-short-list']/div/div[1]/div[1]/a/@href"
+        # abstractxpath1 = "/html/body/div[3]/main/div[2]/div/div/p/text()"
+        # pdfxpath1 = "/html/body/div[3]/main/div[2]/div/div/a[2]/@href"
+
+        # data1 = spider.resp(url, None, getdata)
+        
+        # ret = spider.resp(None, data1, treatsubdata, [abstractxpath1, pdfxpath1, codexpath1], "")
+        
+        # try:
+        #     abstract, pdf, code = ret
+        # except Exception as e:
+        #     logger.error(f"{e=}")
+        #     logger.error(f"{ret=}")
+        #     exit()
+
+        # abstract = abstract.replace("\n", "").replace("\r", "").strip()
+        # custom_print_partial(f"- Abstract: {abstract}\n", f"- PDF: {pdf}\n")
+        
+        # if len(code) > 0:
+        #     # custom_print_partial(f"Code: {code}")
+        #     custom_print_partial(f"- Code")
+        #     for x in code:
+        #         custom_print_partial(f"\t- [{x.split('/')[-1]}]({x})")
+        # else:
+        #     print("code is empty")
  
-        hrefxpath1 = "//div[@id='datasets']//a[1]/@href "
-        imgxpath1 = "//div[@id='datasets']//a/img/@src"
-        titlexpath1 = "//div[@id='datasets']//a[contains(@href, 'dataset')]/text()"
+        # hrefxpath1 = "//div[@id='datasets']//a[1]/@href "
+        # imgxpath1 = "//div[@id='datasets']//a/img/@src"
+        # titlexpath1 = "//div[@id='datasets']//a[contains(@href, 'dataset')]/text()"
 
-        ret = spider.resp(None, data1, treatsubdata_dataset, [hrefxpath1, imgxpath1, titlexpath1], "")
-        if len(ret) > 0:
-            custom_print_partial(f"- Dataset")
-            for x in ret:
-                custom_print_partial(f"\t- [{x[0]}]({x[1]})", f"![{x[0]}]({x[2]})")
-        else:
-            print("dataset is empty")
+        # ret = spider.resp(None, data1, treatsubdata_dataset, [hrefxpath1, imgxpath1, titlexpath1], "")
+        # if len(ret) > 0:
+        #     custom_print_partial(f"- Dataset")
+        #     for x in ret:
+        #         custom_print_partial(f"\t- [{x[0]}]({x[1]})", f"![{x[0]}]({x[2]})")
+        # else:
+        #     print("dataset is empty")
 
-        custom_print_partial("-"*3)
-        if j > 5:
-            break
+        # custom_print_partial("-"*3)
+        # if j > 5:
+        #     break
