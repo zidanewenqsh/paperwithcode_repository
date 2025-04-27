@@ -4,6 +4,9 @@ DCNN/*
 output/*
 adults_female/*
 data/*
+crawler/**/*.md
+crawler/**/*.jpg
+*.mp4
 # *.txt
 graph/*
 *.pdf

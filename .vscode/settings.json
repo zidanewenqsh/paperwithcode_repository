@@ -1,0 +1,34 @@
+{
+  "better-comments.tags": [
+    {
+      "tag": "!",
+      "color": "#FF0000",
+      "strikethrough": false,
+      "backgroundColor": "transparent"
+    },
+    {
+      "tag": "?",
+      "color": "#00FFFF",
+      "strikethrough": false,
+      "backgroundColor": "transparent"
+    },
+    {
+      "tag": "*",
+      "color": "#008000",
+      "strikethrough": false,
+      "backgroundColor": "transparent"
+    },
+    {
+      "tag": "todo",
+      "color": "#FFA500",
+      "strikethrough": false,
+      "backgroundColor": "transparent"
+    },
+    {
+      "tag": "//",
+      "color": "#8E8E8E",
+      "strikethrough": true,
+      "backgroundColor": "transparent"
+    }
+  ]
+}
